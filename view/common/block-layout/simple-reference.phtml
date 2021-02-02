@@ -1,0 +1,78 @@
+<?php
+$this->headLink()->appendStylesheet($this->assetUrl('css/simple-reference.css', 'SimpleReference'));
+$this->headScript()->appendFile($this->assetUrl('js/jquery-simple-tree.js', 'SimpleReference'));
+
+?>
+
+<div class="container mx-auto my-10 px-20">
+    <div class="simple-reference">
+
+        <?php if(!empty($title)): ?>
+            <?php echo $title; ?>
+        <?php endif; ?>
+
+        <div class="outer-container">
+            <ul id="basic" class="force-hidden">
+                <?php
+                if(is_array($this->items_by_year) && count($this->items_by_year) > 0 && $this->property_id > 0) {
+
+                    $base_url = $this->url('site/resource', ['controller' => 'item', 'action' => 'browse'], true);
+                    $property_id = $this->property_id;
+
+                    $param_name = 'numeric';
+
+                    $property_id2 = $property_id;
+                    if($this->property_id2 > 0) {
+                        $property_id2 = $this->property_id2;
+                        $param_name = 'simref';
+                    }
+
+                    foreach($this->items_by_year as $century_id => $century_item) {
+                        $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($century_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($century_item['maxyear']+1)."-01-01";
+                        ?>
+                        <li data-node-id="<?php echo $century_id; ?>">
+                            <a href="<?php echo $browse_url; ?>"><span><?php echo $century_item['minyear']."-".$century_item['maxyear']; ?></span></a> <span>(<?php echo $century_item['total']; ?>)</span><?php
+                            if(count($century_item['children']) > 0) {
+                                foreach($century_item['children'] as $decade_id => $decade_item) {
+                                    $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($decade_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($decade_item['maxyear']+1)."-01-01";
+                                ?>
+                                <ul>
+                                    <li data-node-id="<?php echo $century_id.".".$decade_id; ?>">
+                                        <a href="<?php echo $browse_url; ?>"><span><?php echo $decade_item['minyear']."-".$decade_item['maxyear']; ?></span></a> <span>(<?php echo $decade_item['total']; ?>)</span><?php
+                                        if(count($decade_item['children']) > 0) {
+                                            foreach($decade_item['children'] as $year => $year_item) {
+                                                $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($year-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($year+1)."-01-01";
+                                                ?>
+                                                <ul>
+                                                    <li data-node-id="<?php echo $century_id.".".$decade_id.".".$year; ?>">
+                                                        <a href="<?php echo $browse_url; ?>"><span><?php echo $year; ?></span></a> <span>(<?php echo $year_item['total']; ?>)</span>
+                                                    </li>
+                                                </ul><?php
+                                            } ?>
+                                            <?php
+                                        }
+                                        ?>
+                                    </li>
+                                </ul> <?php
+                                }
+                            }
+                            ?>
+                        </li> <?php
+                    }
+                } ?>
+            </ul>
+        </div>
+
+        <script>
+            $(document).ready(function() {
+                $('#basic').simpleTree({
+                    opened: []
+                });
+                setTimeout(function() {
+                    $('#basic').removeClass("force-hidden");
+                }, 50);
+                console.log("simple reference init");
+            });
+        </script>
+    </div>
+</div>

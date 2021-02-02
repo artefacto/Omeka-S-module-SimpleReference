@@ -1,0 +1,39 @@
+.simple-tree {
+    padding: 0;
+    margin: 0;
+}
+
+.simple-tree li {
+    list-style-type: none;
+}
+
+.simple-tree-icon {
+    display: inline-block;
+    width: 1.5em;
+    line-height: 1.5em;
+    margin: .1em;
+    background-color: #eee;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.simple-tree-opened > .simple-tree-icon:before {
+    content: '-';
+}
+
+.simple-tree-closed > .simple-tree-icon:before {
+    content: '+';
+}
+
+.simple-tree-hidden-icon > .simple-tree-icon {
+    visibility: hidden;
+}
+
+.simple-tree ul {
+    margin-left: 2em;
+}
+
+.force-hidden {
+    display: none !important;
+}
