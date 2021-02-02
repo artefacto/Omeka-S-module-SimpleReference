@@ -115,11 +115,11 @@ class Module extends AbstractModule
                         if(isset($end_dates_by_resource_id[$resource_id][$k])) {
                             $endDateValue = $end_dates_by_resource_id[$resource_id][$k];
                         }
-                        else if($startDateValue >= 631198800){
+                        else if($startDateValue >= 946728000){
                             $endDateValue = 9999999999999999999;
                         }
                         else {
-                            $endDateValue = $startDateValue;
+                            $endDateValue = $startDateValue + 31622400;
                         }
                         if(!($startDateValue < $gt_number && $endDateValue < $gt_number) && !($startDateValue > $lt_number && $endDateValue > $lt_number)) {
                             $valid = true;
