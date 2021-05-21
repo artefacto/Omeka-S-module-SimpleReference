@@ -37,3 +37,7 @@
 .force-hidden {
     display: none !important;
 }
+
+.simple-reference a.selected {
+    font-weight: bold;
+}

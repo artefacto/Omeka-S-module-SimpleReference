@@ -4,75 +4,170 @@ $this->headScript()->appendFile($this->assetUrl('js/jquery-simple-tree.js', 'Sim
 
 ?>
 
-<div class="container mx-auto my-10 px-20">
-    <div class="simple-reference">
+<div class="search-results-wrapper container mx-auto my-10">
 
-        <?php if(!empty($title)): ?>
-            <?php echo $title; ?>
-        <?php endif; ?>
+    <aside class="search-facets lg:mt-6">
+        <div class="simple-reference">
 
-        <div class="outer-container">
-            <ul id="basic" class="force-hidden">
-                <?php
-                if(is_array($this->items_by_year) && count($this->items_by_year) > 0 && $this->property_id > 0) {
+            <?php if(!empty($title)): ?>
+                <?php echo $title; ?>
+            <?php endif; ?>
 
-                    $base_url = $this->url('site/resource', ['controller' => 'item', 'action' => 'browse'], true);
-                    $property_id = $this->property_id;
+            <div class="outer-container">
+                <ul id="basic" class="force-hidden">
+                    <?php
+                    if(is_array($this->items_by_year) && count($this->items_by_year) > 0 && $this->property_id > 0) {
 
-                    $param_name = 'numeric';
+                        $base_url = '';
+                        $property_id = $this->property_id;
 
-                    $property_id2 = $property_id;
-                    if($this->property_id2 > 0) {
-                        $property_id2 = $this->property_id2;
-                        $param_name = 'simref';
-                    }
+                        $param_name = 'numeric';
 
-                    foreach($this->items_by_year as $century_id => $century_item) {
-                        $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($century_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($century_item['maxyear']+1)."-01-01";
-                        ?>
-                        <li data-node-id="<?php echo $century_id; ?>">
-                            <a href="<?php echo $browse_url; ?>"><span><?php echo $century_item['minyear']."-".$century_item['maxyear']; ?></span></a> <span>(<?php echo $century_item['total']; ?>)</span><?php
-                            if(count($century_item['children']) > 0) {
-                                foreach($century_item['children'] as $decade_id => $decade_item) {
-                                    $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($decade_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($decade_item['maxyear']+1)."-01-01";
-                                ?>
-                                <ul>
-                                    <li data-node-id="<?php echo $century_id.".".$decade_id; ?>">
-                                        <a href="<?php echo $browse_url; ?>"><span><?php echo $decade_item['minyear']."-".$decade_item['maxyear']; ?></span></a> <span>(<?php echo $decade_item['total']; ?>)</span><?php
-                                        if(count($decade_item['children']) > 0) {
-                                            foreach($decade_item['children'] as $year => $year_item) {
-                                                $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($year-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($year+1)."-01-01";
-                                                ?>
-                                                <ul>
-                                                    <li data-node-id="<?php echo $century_id.".".$decade_id.".".$year; ?>">
-                                                        <a href="<?php echo $browse_url; ?>"><span><?php echo $year; ?></span></a> <span>(<?php echo $year_item['total']; ?>)</span>
-                                                    </li>
-                                                </ul><?php
-                                            } ?>
-                                            <?php
-                                        }
-                                        ?>
-                                    </li>
-                                </ul> <?php
-                                }
-                            }
+                        $property_id2 = $property_id;
+                        if($this->property_id2 > 0) {
+                            $property_id2 = $this->property_id2;
+                            $param_name = 'simref';
+                        }
+
+                        foreach($this->items_by_year as $century_id => $century_item) {
+                            $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($century_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($century_item['maxyear']+1)."-01-01&refcentury=".$century_id;
                             ?>
-                        </li> <?php
-                    }
-                } ?>
-            </ul>
-        </div>
+                            <li data-node-id="<?php echo $century_id; ?>">
+                                <?php
+                                $class_suffix = '';
+                                if(empty($_GET['refdecade']) && !empty($_GET['refcentury']) && $_GET['refcentury'] == $century_id) {
+                                    $class_suffix = 'selected';
+                                }
+                                ?>
+                                <a class="<?php echo $class_suffix; ?>" href="<?php echo $browse_url; ?>"><span><?php echo $century_item['minyear']."-".$century_item['maxyear']; ?></span></a> <span>(<?php echo $century_item['total']; ?>)</span><?php
+                                if(count($century_item['children']) > 0) {
+                                    foreach($century_item['children'] as $decade_id => $decade_item) {
+                                        $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($decade_item['minyear']-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($decade_item['maxyear']+1)."-01-01&refcentury=".$century_id."&refdecade=".$decade_id;
+                                        ?>
+                                        <ul>
+                                            <li data-node-id="<?php echo $century_id.".".$decade_id; ?>">
+                                                <?php
+                                                $class_suffix = '';
+                                                if(empty($_GET['refyear']) && !empty($_GET['refdecade']) && $_GET['refdecade'] == $decade_id) {
+                                                    $class_suffix = 'selected';
+                                                }
+                                                ?>
+                                                <a class="<?php echo $class_suffix; ?>" href="<?php echo $browse_url; ?>"><span><?php echo $decade_item['minyear']."-".$decade_item['maxyear']; ?></span></a> <span>(<?php echo $decade_item['total']; ?>)</span><?php
+                                                if(count($decade_item['children']) > 0) {
+                                                    foreach($decade_item['children'] as $year => $year_item) {
+                                                        $browse_url = $base_url.'?'.$param_name.'%5Bts%5D%5Bgt%5D%5Bpid%5D='.$property_id.'&'.$param_name.'%5Bts%5D%5Bgt%5D%5Bval%5D='.($year-1).'-12-31&'.$param_name.'%5Bts%5D%5Blt%5D%5Bpid%5D='.$property_id2.'&'.$param_name.'%5Bts%5D%5Blt%5D%5Bval%5D='.($year+1)."-01-01&refcentury=".$century_id."&refdecade=".$decade_id."&refyear=".$year;
+                                                        ?>
+                                                        <ul>
+                                                        <li data-node-id="<?php echo $century_id.".".$decade_id.".".$year; ?>">
+                                                            <?php
+                                                            $class_suffix = '';
+                                                            if(!empty($_GET['refyear']) && $_GET['refyear'] == $year) {
+                                                                $class_suffix = 'selected';
+                                                            }
+                                                            ?>
+                                                            <a class="<?php echo $class_suffix; ?>" href="<?php echo $browse_url; ?>"><span><?php echo $year; ?></span></a> <span>(<?php echo $year_item['total']; ?>)</span>
+                                                        </li>
+                                                        </ul><?php
+                                                    } ?>
+                                                    <?php
+                                                }
+                                                ?>
+                                            </li>
+                                        </ul> <?php
+                                    }
+                                }
+                                ?>
+                            </li> <?php
+                        }
+                    } ?>
+                </ul>
+            </div>
 
-        <script>
-            $(document).ready(function() {
-                $('#basic').simpleTree({
-                    opened: []
+            <?php
+            $opened = '';
+            $opened_arr = array();
+            if(!empty($_GET['refcentury'])) {
+                $opened_arr[] = $_GET['refcentury'];
+                if(!empty($_GET['refdecade'])) {
+                    $opened_arr[] = $_GET['refcentury'].'.'.$_GET['refdecade'];
+                }
+            }
+            $opened = implode(', ', $opened_arr);
+            ?>
+
+            <script>
+                $(document).ready(function() {
+                    $('#basic').simpleTree({
+                        opened: [<?php echo $opened; ?>]
+                    });
+                    setTimeout(function() {
+                        $('#basic').removeClass("force-hidden");
+                    }, 50);
+                    console.log("simple reference init");
                 });
-                setTimeout(function() {
-                    $('#basic').removeClass("force-hidden");
-                }, 50);
-                console.log("simple reference init");
-            });
-        </script>
+            </script>
+        </div>
+    </aside>
+
+    <div class="search-results">
+        <div class="resource-list my-auto mx-auto">
+            <?php
+            $headingTerm = $this->siteSetting('browse_heading_property_term');
+            $bodyTerm = $this->siteSetting('browse_body_property_term');
+            foreach ($items as $item):
+                $heading = $headingTerm ? $item->value($headingTerm, ['default' => $translate('[Untitled]')]) : $item->displayTitle();
+                $body = $bodyTerm ? $item->value($bodyTerm) : $item->displayDescription();
+                ?>
+
+                <!-- item summary card -->
+                <div class="w-full lg:flex mt-1 mb-4 shadow-lg  ">
+                    <?php if ($this->thumbnail($item, 'medium')): ?>
+                        <?php
+                        //$itemThumbnail = $this->thumbnail($item, 'medium');
+                        $media = $item->primaryMedia();
+                        $mediaThumbnail = $media->thumbnailUrl('square'); ?>
+                        <!-- // add a default image in case the item doesn't have a primaryMedia -->
+                        <div id="thumbnail-portrait-wrapper" class="" title="">
+                            <img class="object-none object-center mx-auto my-2" src="<?php echo $this->escapeHtml($media->thumbnailUrl('medium')); ?>" />
+                        </div>
+                    <?php else: ?>
+                        <div class="h-48 lg:w-48 flex-none bg-cover rounded-t lg:rounded-t-none lg:rounded-l text-center overflow-hidden" style="background-image: url('http://fakeimg.pl/200x200//f7fafc/?text=%20">
+
+                        </div>
+
+
+                    <?php endif; ?>
+
+                    <div class="w-full bg-white rounded-b lg:rounded-b-none lg:rounded-r p-4 flex flex-col justify-between leading-normal">
+                        <div class="mb-8">
+                            <?php $tags = $item->value('dcterms:subject',['all' => true]); ?>
+                            <p class="tags text-sm text-gray-600 flex items-center">
+                                <?php foreach ($tags as $tag) { echo '        <svg class="fill-current text-gray-500 w-3 h-3 mr-2 " fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+' . $tag->asHtml(); } ?>
+                            </p>
+
+                            <div class="text-black font-semibold text-lg mb-2"><?php echo $item->link($heading); ?></div>
+                            <p class="text-grey-darker text-base"><?php echo $escape($body); ?></p>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="text-sm">
+
+                                <p class="text-grey-dark"><?php
+                                    $dob = $item->value('foaf:birthday');
+                                    $dod = $item->value('dcterms:date');
+                                    $birthyear = strtok($dob, '-');
+                                    $finalyear = strtok($dod, '-');
+                                    ?>
+
+                                    <?php echo $birthyear?>   <?php if ($dod) : ?> <?php echo ' - ' . $finalyear ?> <?php endif; ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php echo $this->pagination(); ?>
     </div>
 </div>
+

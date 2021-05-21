@@ -5,6 +5,7 @@ use Omeka\Api\Representation\SiteRepresentation;
 use Omeka\Api\Representation\SitePageRepresentation;
 use Omeka\Api\Representation\SitePageBlockRepresentation;
 use Omeka\Site\BlockLayout\AbstractBlockLayout;
+use Search\Response;
 use Zend\View\Renderer\PhpRenderer;
 
 use Laminas\ServiceManager\Factory\FactoryInterface;
@@ -79,6 +80,7 @@ class SimpleReference extends AbstractBlockLayout
         }
 
         $grouped_items = array();
+        $current_items = array();
 
         $property_id = 0;
         $property_id2 = 0;
@@ -139,17 +141,30 @@ class SimpleReference extends AbstractBlockLayout
             }
         }
 
+        $resource_ids_for_display = false;
+        $current_century = !empty($_GET['refcentury']) ? $_GET['refcentury'] : 0;
+        $current_decade = !empty($_GET['refdecade']) ? $_GET['refdecade'] : 0;
+        $current_year = !empty($_GET['refyear']) ? $_GET['refyear'] : 0;
+
         if($property_id > 0 && $property_id2 == 0) {
 
-            $sql = "SELECT va_.value FROM `value` va_ 
+            $sql = "SELECT is_.item_id, va_.value FROM `value` va_ 
             INNER JOIN item_site is_ ON va_.resource_id = is_.item_id   
             WHERE is_.site_id = :site_id AND va_.property_id = :property_id AND va_.is_public = 1 ORDER BY va_.value ASC";
 
             $stmt = $connection->executeQuery($sql, ['site_id' => $site->id(), 'property_id' => $property_id]);
 
-            $items_by_year = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+            $items_by_year = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-            foreach($items_by_year as $item) {
+            $items_of_century = array();
+            $items_of_decade = array();
+            $items_of_year = array();
+
+            foreach($items_by_year as $item_data) {
+                $item = $item_data['value'];
+
+                $item_id = $item_data['item_id'];
+
                 $item = substr($item, 0, 4);
                 if(!is_numeric($item)) {
                     continue;
@@ -157,6 +172,16 @@ class SimpleReference extends AbstractBlockLayout
                 $century = floor($item / 100);
                 $decade = floor($item / 10);
                 $year = intval($item);
+
+                if($current_year == $year) {
+                    $items_of_year[] = $item_id;
+                }
+                else if($current_decade == $decade) {
+                    $items_of_decade[] = $item_id;
+                }
+                else if($current_century == $century) {
+                    $items_of_century[] = $item_id;
+                }
 
                 if(!isset($grouped_items[$century])) {
                     $grouped_items[$century]["total"] = 0;
@@ -179,6 +204,16 @@ class SimpleReference extends AbstractBlockLayout
                 $grouped_items[$century]["total"]++;
                 $grouped_items[$century]["children"][$decade]["total"]++;
                 $grouped_items[$century]["children"][$decade]["children"][$year]["total"]++;
+            }
+
+            if($current_year > 0) {
+                $resource_ids_for_display = $items_of_year;
+            }
+            else if($current_decade > 0) {
+                $resource_ids_for_display = $items_of_decade;
+            }
+            else if($current_century > 0) {
+                $resource_ids_for_display = $items_of_century;
             }
         }
 
@@ -279,6 +314,10 @@ class SimpleReference extends AbstractBlockLayout
                             }
                         }
 
+                        if($current_century == $century) {
+                            $resource_ids_for_display = $valid_resource_ids_century;
+                        }
+
                         $grouped_items[$century]["total"] = count($valid_resource_ids_century);
                     }
 
@@ -322,6 +361,10 @@ class SimpleReference extends AbstractBlockLayout
                             }
                         }
 
+                        if($current_decade == $decade) {
+                            $resource_ids_for_display = $valid_resource_ids_decade;
+                        }
+
                         $grouped_items[$century]["children"][$decade]["total"] = count($valid_resource_ids_decade);
                     }
 
@@ -362,6 +405,10 @@ class SimpleReference extends AbstractBlockLayout
                             }
                         }
 
+                        if($current_year == $year) {
+                            $resource_ids_for_display = $valid_resource_ids;
+                        }
+
                         $grouped_items[$century]["children"][$decade]["children"][$year]["total"] = count($valid_resource_ids);
                     }
                 }
@@ -370,11 +417,59 @@ class SimpleReference extends AbstractBlockLayout
 
         }
 
+        $api = $services->get('Omeka\ApiManager');
+
+        $currentPage = $view->params()->fromQuery('page', 1);
+
+        $sort_by = 'foaf:familyName';
+        $sort_order = 'asc';
+
+        if(isset($_REQUEST['sort'])) {
+            $sort_parts = explode(" ", $_REQUEST['sort']);
+            if(count($sort_parts) == 2) {
+                $sort_by = $sort_parts[0];
+                $sort_order = $sort_parts[1];
+            }
+        }
+
+        if(is_array($resource_ids_for_display)) {
+
+            if(count($resource_ids_for_display) == 0) {
+                $resource_ids_for_display = array(999999999999);
+            }
+
+            $items_response = $api->search('items', [
+                'per_page' => 10,
+                'page' => $currentPage,
+                'site_id' => $site->id(),
+                'sort_by' => $sort_by,
+                'sort_order' => $sort_order,
+                'id' => $resource_ids_for_display
+            ]);
+        }
+        else {
+            $items_response = $api->search('items', [
+                'per_page' => 10,
+                'page' => $currentPage,
+                'sort_by' => $sort_by,
+                'sort_order' => $sort_order,
+                'site_id' => $site->id()
+            ]);
+        }
+
+        $totalCount = $items_response->getTotalResults();
+
+        $view->pagination(null, $totalCount, $currentPage, 10);
+
 		return $view->partial('common/block-layout/simple-reference', [
 			'title' => $block->dataValue('title'),
             'items_by_year' => $grouped_items,
             'property_id' => $property_id,
-            'property_id2' => $property_id2
+            'property_id2' => $property_id2,
+            'items' => $items_response->getContent(),
+            'translate' => $view->plugin('translate'),
+            'escape' => $view->plugin('escapeHtml'),
+            'partial' => $view->plugin('partial')
 		]);
 	}
 }
